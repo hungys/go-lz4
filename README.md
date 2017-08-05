@@ -14,7 +14,7 @@ import "github.com/hungys/go-lz4"
 
 Here are all the available APIs,
 
-```go
+```
 func CompressBound(size int) int
 func CompressDefault(source, dest []byte) (int, error)
 func CompressFast(source, dest []byte, acceleration int) (int, error)
