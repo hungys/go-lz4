@@ -1,6 +1,9 @@
 go-lz4
 ======
 
+[![GoDoc](https://godoc.org/github.com/hungys/go-lz4?status.svg)](https://godoc.org/github.com/hungys/go-lz4)
+[![Build Status](https://travis-ci.org/hungys/go-lz4.svg?branch=master)](https://travis-ci.org/hungys/go-lz4)
+
 go-lz4 is a Go binding for [LZ4](https://github.com/lz4/lz4) compression library.
 
 Here are all available APIs,
