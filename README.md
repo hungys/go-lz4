@@ -22,3 +22,13 @@ func CompressFast(source, dest []byte, acceleration int) (int, error)
 func DecompressSafe(source, dest []byte) (int, error)
 func DecompressFast(source, dest []byte, originalSize int) (int, error)
 ```
+
+We also provide another sets of APIs for compressing or decompressing struct or slice. For struct, you should pass a **pointer**. But noted that for slice, you should pass **slice itself**, but not a pointer!
+
+```
+func CompressAnyDefault(source, dest interface{}, sourceSize, maxDestSize int) (int, error)
+func CompressAnyFast(source, dest interface{}, sourceSize, maxDestSize, acceleration int) (int, error)
+
+func DecompressAnySafe(source, dest interface{}, compressedSize, maxDecompressedSize int) (int, error)
+func DecompressAnyFast(source, dest interface{}, originalSize int) (int, error)
+```

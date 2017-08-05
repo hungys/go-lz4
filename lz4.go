@@ -5,14 +5,35 @@ package lz4
 import "C"
 import (
 	"errors"
+	"reflect"
 	"unsafe"
 )
 
-func byteSliceToCharPointer(in []byte) *C.char {
-	if len(in) == 0 {
+func byteSliceToCharPointer(b []byte) *C.char {
+	if len(b) == 0 {
 		return (*C.char)(unsafe.Pointer(nil))
 	}
-	return (*C.char)(unsafe.Pointer(&in[0]))
+	return (*C.char)(unsafe.Pointer(&b[0]))
+}
+
+func interfaceToCharPointer(i interface{}) *C.char {
+	if i == nil {
+		return (*C.char)(unsafe.Pointer(nil))
+	}
+
+	v := reflect.ValueOf(i)
+	if v.Kind() == reflect.Slice {
+		return (*C.char)(unsafe.Pointer(v.Index(0).UnsafeAddr()))
+	} else if v.Kind() == reflect.Ptr {
+		return (*C.char)(unsafe.Pointer(v.Pointer()))
+	}
+
+	return (*C.char)(unsafe.Pointer(nil))
+}
+
+// CompressBound returns the maximum size that LZ4 compression may output in a "worst case" scenario (input data not compressible).
+func CompressBound(size int) int {
+	return int(C.LZ4_compressBound(C.int(size)))
 }
 
 // CompressDefault compresses buffer "source" into already allocated "dest" buffer.
@@ -28,11 +49,6 @@ func CompressDefault(source, dest []byte) (int, error) {
 	}
 
 	return ret, nil
-}
-
-// CompressBound returns the maximum size that LZ4 compression may output in a "worst case" scenario (input data not compressible).
-func CompressBound(size int) int {
-	return int(C.LZ4_compressBound(C.int(size)))
 }
 
 // CompressFast works the same as CompressDefault, but allows to select an "acceleration" factor.
@@ -69,6 +85,54 @@ func DecompressSafe(source, dest []byte) (int, error) {
 func DecompressFast(source, dest []byte, originalSize int) (int, error) {
 	ret := int(C.LZ4_decompress_fast(byteSliceToCharPointer(source),
 		byteSliceToCharPointer(dest), C.int(originalSize)))
+	if ret < 0 {
+		return ret, errors.New("Malformed LZ4 source")
+	}
+
+	return ret, nil
+}
+
+// CompressAnyDefault works the same as CompressDefault, but you can pass pointer of struct or slice as a buffer.
+// Also, the size of buffer should be specified explicitly.
+func CompressAnyDefault(source, dest interface{}, sourceSize, maxDestSize int) (int, error) {
+	ret := int(C.LZ4_compress_default(interfaceToCharPointer(source),
+		interfaceToCharPointer(dest), C.int(sourceSize), C.int(maxDestSize)))
+	if ret == 0 {
+		return ret, errors.New("Insufficient destination buffer")
+	}
+
+	return ret, nil
+}
+
+// CompressAnyFast works the same as CompressFast, but you can pass pointer of struct or slice as a buffer.
+// Also, the size of buffer should be specified explicitly.
+func CompressAnyFast(source, dest interface{}, sourceSize, maxDestSize, acceleration int) (int, error) {
+	ret := int(C.LZ4_compress_fast(interfaceToCharPointer(source),
+		interfaceToCharPointer(dest), C.int(sourceSize), C.int(maxDestSize),
+		C.int(acceleration)))
+	if ret == 0 {
+		return ret, errors.New("Insufficient destination buffer")
+	}
+
+	return ret, nil
+}
+
+// DecompressAnySafe works the same as DecompressSafe, but you can pass pointer of struct or slice as a buffer.
+// Also, the size of buffer should be specified explicitly.
+func DecompressAnySafe(source, dest interface{}, compressedSize, maxDecompressedSize int) (int, error) {
+	ret := int(C.LZ4_decompress_safe(interfaceToCharPointer(source),
+		interfaceToCharPointer(dest), C.int(compressedSize), C.int(maxDecompressedSize)))
+	if ret < 0 {
+		return ret, errors.New("Malformed LZ4 source or insufficient destination buffer")
+	}
+
+	return ret, nil
+}
+
+// DecompressAnyFast works the same as DecompressFast, but you can pass pointer of struct or slice as a buffer.
+func DecompressAnyFast(source, dest interface{}, originalSize int) (int, error) {
+	ret := int(C.LZ4_decompress_fast(interfaceToCharPointer(source),
+		interfaceToCharPointer(dest), C.int(originalSize)))
 	if ret < 0 {
 		return ret, errors.New("Malformed LZ4 source")
 	}
