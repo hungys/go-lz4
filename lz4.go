@@ -23,7 +23,7 @@ func byteSliceToCharPointer(in []byte) *C.char {
 func CompressDefault(source, dest []byte) (int, error) {
 	ret := int(C.LZ4_compress_default(byteSliceToCharPointer(source),
 		byteSliceToCharPointer(dest), C.int(len(source)), C.int(len(dest))))
-	if ret < 0 {
+	if ret == 0 {
 		return ret, errors.New("Insufficient destination buffer")
 	}
 
@@ -42,7 +42,7 @@ func CompressFast(source, dest []byte, acceleration int) (int, error) {
 	ret := int(C.LZ4_compress_fast(byteSliceToCharPointer(source),
 		byteSliceToCharPointer(dest), C.int(len(source)), C.int(len(dest)),
 		C.int(acceleration)))
-	if ret < 0 {
+	if ret == 0 {
 		return ret, errors.New("Insufficient destination buffer")
 	}
 
